@@ -9,7 +9,7 @@ concurrent callbacks, and downstream failures.
 
 Vehicle title integrations combine long-running state workflows, legacy SOAP
 contracts, newer REST clients, jurisdiction-specific data, and strict audit needs.
-This project focuses on those engineering constraints rather than generic CRUD.
+
 
 ## Highlights
 
