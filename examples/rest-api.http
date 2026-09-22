@@ -1,0 +1,53 @@
+@baseUrl = http://localhost:8080
+@apiKey = local-development-key
+@transactionId = replace-after-submission
+
+### Submit a title transfer
+POST {{baseUrl}}/api/v1/title-transactions
+X-API-Key: {{apiKey}}
+Idempotency-Key: dealer-request-2026-0001
+X-Correlation-Id: demo-correlation-0001
+Content-Type: application/json
+
+{
+  "vin": "1HGCM82633A004352",
+  "jurisdiction": "MA",
+  "transactionType": "TITLE_TRANSFER",
+  "owner": {
+    "fullName": "Alex Morgan",
+    "email": "alex.morgan@example.com",
+    "addressLine1": "1 Main Street",
+    "city": "Boston",
+    "state": "MA",
+    "postalCode": "02108"
+  },
+  "purchasePrice": 18450.00
+}
+
+### Read the transaction
+GET {{baseUrl}}/api/v1/title-transactions/{{transactionId}}
+X-API-Key: {{apiKey}}
+
+### Start validation
+PATCH {{baseUrl}}/api/v1/title-transactions/{{transactionId}}/status
+X-API-Key: {{apiKey}}
+Content-Type: application/json
+
+{
+  "status": "VALIDATING"
+}
+
+### Submit to a state agency
+PATCH {{baseUrl}}/api/v1/title-transactions/{{transactionId}}/status
+X-API-Key: {{apiKey}}
+Content-Type: application/json
+
+{
+  "status": "SUBMITTED_TO_STATE",
+  "externalReference": "MA-RMV-2026-0091"
+}
+
+### Read the immutable audit trail
+GET {{baseUrl}}/api/v1/title-transactions/{{transactionId}}/audit-events
+X-API-Key: {{apiKey}}
+

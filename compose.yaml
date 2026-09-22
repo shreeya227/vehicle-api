@@ -1,0 +1,33 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: vehicle_titles
+      POSTGRES_USER: vehicle_titles
+      POSTGRES_PASSWORD: vehicle_titles
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vehicle_titles -d vehicle_titles"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - vehicle-title-data:/var/lib/postgresql/data
+
+  api:
+    build: .
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/vehicle_titles
+      DATABASE_USERNAME: vehicle_titles
+      DATABASE_PASSWORD: vehicle_titles
+      APP_API_KEY: local-development-key
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  vehicle-title-data:
+

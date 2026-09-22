@@ -1,0 +1,11 @@
+<soapenv:Envelope
+    xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+    xmlns:tns="https://github.com/shreeya227/vehicle-title-transaction-api/ws/title/v1">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <tns:GetTitleTransactionRequest>
+      <tns:transactionId>replace-with-transaction-id</tns:transactionId>
+    </tns:GetTitleTransactionRequest>
+  </soapenv:Body>
+</soapenv:Envelope>
+

@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vehicle-title-api
+data:
+  DATABASE_URL: jdbc:postgresql://postgres:5432/vehicle_titles
+  DATABASE_USERNAME: vehicle_titles
+

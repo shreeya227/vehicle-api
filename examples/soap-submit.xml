@@ -1,0 +1,23 @@
+<soapenv:Envelope
+    xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+    xmlns:tns="https://github.com/shreeya227/vehicle-title-transaction-api/ws/title/v1">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <tns:SubmitTitleTransactionRequest>
+      <tns:idempotencyKey>soap-request-2026-0001</tns:idempotencyKey>
+      <tns:vin>1HGCM82633A004352</tns:vin>
+      <tns:jurisdiction>MA</tns:jurisdiction>
+      <tns:transactionType>TITLE_TRANSFER</tns:transactionType>
+      <tns:owner>
+        <tns:fullName>Alex Morgan</tns:fullName>
+        <tns:email>alex.morgan@example.com</tns:email>
+        <tns:addressLine1>1 Main Street</tns:addressLine1>
+        <tns:city>Boston</tns:city>
+        <tns:state>MA</tns:state>
+        <tns:postalCode>02108</tns:postalCode>
+      </tns:owner>
+      <tns:purchasePrice>18450.00</tns:purchasePrice>
+    </tns:SubmitTitleTransactionRequest>
+  </soapenv:Body>
+</soapenv:Envelope>
+

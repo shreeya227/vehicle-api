@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:tns="https://github.com/shreeya227/vehicle-title-transaction-api/ws/title/v1"
+           targetNamespace="https://github.com/shreeya227/vehicle-title-transaction-api/ws/title/v1"
+           elementFormDefault="qualified">
+
+    <xs:simpleType name="TransactionType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="NEW_TITLE"/>
+            <xs:enumeration value="TITLE_TRANSFER"/>
+            <xs:enumeration value="REPLACEMENT_TITLE"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="TransactionStatus">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="RECEIVED"/>
+            <xs:enumeration value="VALIDATING"/>
+            <xs:enumeration value="SUBMITTED_TO_STATE"/>
+            <xs:enumeration value="COMPLETED"/>
+            <xs:enumeration value="REJECTED"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="Owner">
+        <xs:sequence>
+            <xs:element name="fullName" type="xs:string"/>
+            <xs:element name="email" type="xs:string"/>
+            <xs:element name="addressLine1" type="xs:string"/>
+            <xs:element name="city" type="xs:string"/>
+            <xs:element name="state" type="xs:string"/>
+            <xs:element name="postalCode" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="TitleTransactionRecord">
+        <xs:sequence>
+            <xs:element name="transactionId" type="xs:string"/>
+            <xs:element name="vin" type="xs:string"/>
+            <xs:element name="jurisdiction" type="xs:string"/>
+            <xs:element name="transactionType" type="tns:TransactionType"/>
+            <xs:element name="owner" type="tns:Owner"/>
+            <xs:element name="purchasePrice" type="xs:decimal" minOccurs="0"/>
+            <xs:element name="status" type="tns:TransactionStatus"/>
+            <xs:element name="externalReference" type="xs:string" minOccurs="0"/>
+            <xs:element name="rejectionReason" type="xs:string" minOccurs="0"/>
+            <xs:element name="createdAt" type="xs:dateTime"/>
+            <xs:element name="updatedAt" type="xs:dateTime"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:element name="SubmitTitleTransactionRequest">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="idempotencyKey" type="xs:string"/>
+                <xs:element name="vin" type="xs:string"/>
+                <xs:element name="jurisdiction" type="xs:string"/>
+                <xs:element name="transactionType" type="tns:TransactionType"/>
+                <xs:element name="owner" type="tns:Owner"/>
+                <xs:element name="purchasePrice" type="xs:decimal" minOccurs="0"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="SubmitTitleTransactionResponse">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="transaction" type="tns:TitleTransactionRecord"/>
+                <xs:element name="idempotentReplay" type="xs:boolean"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="GetTitleTransactionRequest">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="transactionId" type="xs:string"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="GetTitleTransactionResponse">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="transaction" type="tns:TitleTransactionRecord"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>
