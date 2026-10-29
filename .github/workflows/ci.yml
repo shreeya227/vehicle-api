@@ -17,7 +17,8 @@ jobs:
           set -o pipefail
           mvn --batch-mode verify 2>&1 | tee build.log || {
             # Surface the first errors as annotations so they show on the run summary.
-            grep -E "^\[ERROR\]" build.log | grep -v "^\[ERROR\] *$" | head -10 | sed 's/^/::error::/'
+            grep -h "Caused by" target/surefire-reports/*.txt 2>/dev/null | sort | uniq -c | sort -rn | head -6 | sed 's/^/::error::/'
+            grep -E "^\[ERROR\]" build.log | grep -v "^\[ERROR\] *$" | head -4 | sed 's/^/::error::/'
             exit 1
           }
       - uses: actions/upload-artifact@v4
