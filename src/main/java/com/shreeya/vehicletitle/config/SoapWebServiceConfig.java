@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.ws.config.annotation.EnableWs;
 import org.springframework.ws.server.EndpointExceptionResolver;
-import org.springframework.ws.soap.SoapFaultDefinition;
+import org.springframework.ws.soap.server.endpoint.SoapFaultDefinition;
 import org.springframework.ws.soap.server.endpoint.SoapFaultMappingExceptionResolver;
 import org.springframework.ws.transport.http.MessageDispatcherServlet;
 import org.springframework.ws.wsdl.wsdl11.DefaultWsdl11Definition;
