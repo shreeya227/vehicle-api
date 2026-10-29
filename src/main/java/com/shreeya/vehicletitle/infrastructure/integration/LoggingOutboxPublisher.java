@@ -4,9 +4,8 @@ import com.shreeya.vehicletitle.application.OutboxPublisher;
 import com.shreeya.vehicletitle.domain.OutboxEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 
-@Component
+/** Local adapter that writes events to the log. Selected when app.outbox.publisher=logging. */
 public class LoggingOutboxPublisher implements OutboxPublisher {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggingOutboxPublisher.class);

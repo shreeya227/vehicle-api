@@ -2,6 +2,8 @@ package com.shreeya.vehicletitle.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Embeddable
 public class OwnerDetails {
@@ -19,6 +21,7 @@ public class OwnerDetails {
     private String city;
 
     @Column(name = "owner_state", nullable = false, length = 2)
+    @JdbcTypeCode(SqlTypes.CHAR)
     private String state;
 
     @Column(name = "owner_postal_code", nullable = false, length = 10)

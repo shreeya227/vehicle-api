@@ -30,6 +30,29 @@ server:
 app:
   security:
     api-key: ${APP_API_KEY:dev-secret-change-me}
+  outbox:
+    # "logging" writes events to the log; "http" delivers them to the title registry webhook.
+    publisher: ${OUTBOX_PUBLISHER:logging}
+    webhook-url: ${OUTBOX_WEBHOOK_URL:http://localhost:8081/title-events}
+    webhook-timeout: ${OUTBOX_WEBHOOK_TIMEOUT:2s}
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      titleRegistry:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        slow-call-duration-threshold: 1500ms
+        slow-call-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+        register-health-indicator: true
+        # A 4xx means the event itself was rejected, not that the registry is down.
+        ignore-exceptions:
+          - org.springframework.web.client.HttpClientErrorException
 
 management:
   endpoints:
@@ -40,6 +63,16 @@ management:
     health:
       probes:
         enabled: true
+      show-components: always
+  health:
+    circuitbreakers:
+      enabled: true
+  tracing:
+    sampling:
+      probability: ${TRACING_SAMPLING_PROBABILITY:1.0}
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:http://localhost:4318/v1/traces}
 
 springdoc:
   swagger-ui:

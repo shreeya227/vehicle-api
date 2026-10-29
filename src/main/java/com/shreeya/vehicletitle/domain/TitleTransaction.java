@@ -8,6 +8,8 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -27,12 +29,15 @@ public class TitleTransaction {
     private String idempotencyKey;
 
     @Column(name = "request_hash", nullable = false, length = 64)
+    @JdbcTypeCode(SqlTypes.CHAR)
     private String requestHash;
 
     @Column(nullable = false, length = 17)
+    @JdbcTypeCode(SqlTypes.CHAR)
     private String vin;
 
     @Column(nullable = false, length = 2)
+    @JdbcTypeCode(SqlTypes.CHAR)
     private String jurisdiction;
 
     @Enumerated(EnumType.STRING)
