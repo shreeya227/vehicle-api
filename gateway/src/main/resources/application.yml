@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: vehicle-title-gateway
+
+server:
+  port: ${PORT:8000}
+
+gateway:
+  vehicle-api-uri: ${VEHICLE_API_URI:http://localhost:8080}
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      vehicleApi:
+        sliding-window-size: 20
+        minimum-number-of-calls: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 20s
+        permitted-number-of-calls-in-half-open-state: 3
+        register-health-indicator: true
+  timelimiter:
+    instances:
+      vehicleApi:
+        timeout-duration: 5s
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,gateway
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  tracing:
+    sampling:
+      probability: ${TRACING_SAMPLING_PROBABILITY:1.0}
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:http://localhost:4318/v1/traces}

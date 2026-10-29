@@ -45,6 +45,11 @@ public class OutboxDispatcher {
             try {
                 publisher.publish(event);
                 event.markPublished(now);
+            } catch (DownstreamUnavailableException exception) {
+                // The circuit breaker is open: nothing was sent, so this does not count as an
+                // attempt. Leave this and the remaining events pending for the next poll.
+                LOGGER.warn("Outbox delivery paused: {}", exception.getMessage());
+                break;
             } catch (RuntimeException exception) {
                 event.recordFailure(now, MAXIMUM_ATTEMPTS);
                 LOGGER.warn("Outbox delivery failed for event {} on attempt {}",

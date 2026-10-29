@@ -22,11 +22,42 @@ services:
       DATABASE_USERNAME: vehicle_titles
       DATABASE_PASSWORD: vehicle_titles
       APP_API_KEY: local-development-key
+      OUTBOX_PUBLISHER: http
+      OUTBOX_WEBHOOK_URL: http://title-registry:8080/title-events
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://jaeger:4318/v1/traces
     ports:
       - "8080:8080"
     depends_on:
       postgres:
         condition: service_healthy
+      jaeger:
+        condition: service_started
+
+  gateway:
+    build: ./gateway
+    environment:
+      VEHICLE_API_URI: http://api:8080
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://jaeger:4318/v1/traces
+    ports:
+      - "8000:8000"
+    depends_on:
+      - api
+
+  # Stand-in for the state title registry that receives outbox events. It echoes each request,
+  # so you can stop it (docker compose stop title-registry) to watch the circuit breaker open.
+  title-registry:
+    image: mendhak/http-https-echo:31
+    environment:
+      HTTP_PORT: 8080
+
+  # Trace viewer: open http://localhost:16686 and pick the vehicle-title-gateway service.
+  jaeger:
+    image: jaegertracing/all-in-one:1.62.0
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686"
+      - "4318:4318"
 
 volumes:
   vehicle-title-data:

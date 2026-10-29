@@ -45,3 +45,35 @@ or an agency-specific client without changing the transaction use cases.
 - Correlation IDs flow through responses and structured log context.
 - Actuator exposes health probes and Prometheus metrics.
 
+## Circuit breaker on top of outbox retries
+
+The outbox already retries each event with exponential backoff, so a circuit breaker
+might look redundant. The two solve different problems. Backoff is per event: during
+an outage, every pending event still makes its own failing call. The circuit breaker
+is per dependency: once the registry is clearly down, no calls are made at all until a
+trial call succeeds.
+
+Two details matter. First, a call rejected by an open circuit is not counted as an
+attempt, so an outage longer than the retry budget does not mark good events as
+`FAILED`. Second, 4xx responses are excluded from the failure rate, because a rejected
+payload is a problem with one event, not with the registry.
+
+## Gateway as a separate service
+
+Spring Cloud Gateway runs on WebFlux, while the API runs on Spring MVC with virtual
+threads, so the gateway is a separate deployable rather than a module of the API. That
+also matches how it would run in production: one edge service in front of several
+backends, scaled independently.
+
+Only reads are retried at the gateway. Retrying a `POST` at the edge could submit a
+transaction twice if the first attempt succeeded but the response was lost; the client
+owns the `Idempotency-Key` and is the right place to replay writes.
+
+## Tracing through Micrometer
+
+Tracing uses Micrometer Tracing with the OpenTelemetry bridge and the OTLP exporter
+instead of the OpenTelemetry Java agent. It keeps configuration in Spring properties,
+reuses the observations Spring already creates for HTTP servers, `RestClient`, and the
+gateway, and needs no JVM flags. Sampling is configurable so production can trace a
+fraction of requests.
+

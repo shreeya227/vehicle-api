@@ -41,4 +41,30 @@ class OutboxDispatcherTest {
         assertThat(event.getStatus()).isEqualTo(OutboxStatus.PENDING);
         assertThat(event.getNextAttemptAt()).isEqualTo(now.plusSeconds(2));
     }
+
+    @Test
+    void leavesEventsPendingWithoutCountingAnAttemptWhenDownstreamIsUnavailable() {
+        Instant now = Instant.parse("2026-09-22T12:00:00Z");
+        OutboxEvent first = new OutboxEvent(UUID.randomUUID(), UUID.randomUUID(),
+                "TITLE_TRANSACTION_RECEIVED", "{}", now);
+        OutboxEvent second = new OutboxEvent(UUID.randomUUID(), UUID.randomUUID(),
+                "TITLE_TRANSACTION_RECEIVED", "{}", now);
+        OutboxEventRepository repository = mock(OutboxEventRepository.class);
+        OutboxPublisher publisher = mock(OutboxPublisher.class);
+        when(repository.findTop20ByStatusAndNextAttemptAtLessThanEqualOrderByCreatedAtAsc(
+                OutboxStatus.PENDING, now)).thenReturn(List.of(first, second));
+        org.mockito.Mockito.doThrow(new DownstreamUnavailableException("Title registry", null))
+                .when(publisher).publish(first);
+        OutboxDispatcher dispatcher = new OutboxDispatcher(repository, publisher,
+                Clock.fixed(now, ZoneOffset.UTC));
+
+        dispatcher.publishPendingEvents();
+
+        assertThat(first.getAttempts()).isZero();
+        assertThat(first.getStatus()).isEqualTo(OutboxStatus.PENDING);
+        assertThat(first.getNextAttemptAt()).isEqualTo(now);
+        // The batch stops at the open circuit instead of trying every remaining event.
+        org.mockito.Mockito.verify(publisher, org.mockito.Mockito.never()).publish(second);
+        assertThat(second.getStatus()).isEqualTo(OutboxStatus.PENDING);
+    }
 }
