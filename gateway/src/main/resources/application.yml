@@ -1,12 +1,23 @@
 spring:
   application:
     name: vehicle-title-gateway
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      # Keep Redis from slowing the edge: if it does not answer quickly, the limiter lets the request through.
+      connect-timeout: 500ms
+      timeout: 500ms
 
 server:
   port: ${PORT:8000}
 
 gateway:
   vehicle-api-uri: ${VEHICLE_API_URI:http://localhost:8080}
+  rate-limit:
+    replenish-rate: ${RATE_LIMIT_REPLENISH_RATE:10}
+    burst-capacity: ${RATE_LIMIT_BURST_CAPACITY:20}
+    requested-tokens: 1
 
 resilience4j:
   circuitbreaker:
@@ -32,6 +43,11 @@ management:
     health:
       probes:
         enabled: true
+  health:
+    # The rate limiter lets traffic through when Redis is down, so a Redis outage
+    # should not mark the gateway unhealthy and pull it out of rotation.
+    redis:
+      enabled: false
   tracing:
     sampling:
       probability: ${TRACING_SAMPLING_PROBABILITY:1.0}

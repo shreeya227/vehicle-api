@@ -37,11 +37,17 @@ services:
     build: ./gateway
     environment:
       VEHICLE_API_URI: http://api:8080
+      REDIS_HOST: redis
       OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://jaeger:4318/v1/traces
     ports:
       - "8000:8000"
     depends_on:
       - api
+      - redis
+
+  # Token buckets for the gateway's per-partner rate limits.
+  redis:
+    image: redis:7
 
   # Stand-in for the state title registry that receives outbox events. It echoes each request,
   # so you can stop it (docker compose stop title-registry) to watch the circuit breaker open.
