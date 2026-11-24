@@ -22,7 +22,7 @@ contracts, newer REST clients, jurisdiction-specific data, and strict audit need
 - Immutable audit history across REST and SOAP channels
 - Transactional outbox with bounded exponential-backoff retries
 - Resilience4j circuit breaker on outbound webhook delivery, layered on top of outbox retries
-- Spring Cloud Gateway edge service with routing, read retries, a circuit breaker, and an RFC 9457 fallback
+- Spring Cloud Gateway edge service with per-partner rate limiting (Redis token buckets), routing, read retries, a circuit breaker, and an RFC 9457 fallback
 - Distributed tracing with OpenTelemetry across gateway, API, database calls, and outbound webhooks, viewed in Jaeger
 - API-key authentication, request validation, correlation IDs, health probes, and metrics
 - Docker Compose, Kubernetes manifests, GitHub Actions, JaCoCo, and ArchUnit
@@ -31,7 +31,7 @@ contracts, newer REST clients, jurisdiction-specific data, and strict audit need
 
 ```mermaid
 flowchart TB
-    REST[REST clients] --> GW[Spring Cloud Gateway<br/>routing, retries, circuit breaker]
+    REST[REST clients] --> GW[Spring Cloud Gateway<br/>rate limits, routing, retries, circuit breaker]
     SOAP[SOAP partners] --> GW
     GW --> API[REST adapter]
     GW --> WS[SOAP endpoint]
@@ -154,6 +154,12 @@ The `gateway/` service is a Spring Cloud Gateway in front of the API:
   client replays a submission safely with its own `Idempotency-Key`.
 - Wraps every route in a circuit breaker with a 5-second time limit. When the API is
   down, clients get a 503 Problem Details response with `Retry-After: 30`.
+- Rate limits each partner before anything else runs. Every API key gets its own token
+  bucket in Redis (callers without a key are grouped by IP), so one busy partner cannot use
+  up capacity meant for the others. The default is 10 requests per second with bursts up
+  to 20. Over the limit, the gateway returns `429 Too Many Requests` without calling the
+  API, and every response carries `X-RateLimit-Remaining`. If Redis is unreachable, the
+  limiter lets requests through rather than blocking all partner traffic.
 
 ### Tracing
 
@@ -172,7 +178,7 @@ mvn clean verify
 The suite covers domain transitions, idempotent replay and conflicts, audit creation,
 API authentication, contract-first SOAP requests and faults, outbox backoff, circuit
 breaker behavior, and architectural dependency rules. The gateway has its own suite
-(`cd gateway && mvn verify`) covering routing, read retries, and the fallback. GitHub Actions runs the suite with Java 21 and uploads
+(`cd gateway && mvn verify`) covering routing, read retries, the fallback, and per-partner rate limits against a real Redis (start `redis-server` locally, or that test is skipped). GitHub Actions runs the suite with Java 21 and uploads
 Surefire and JaCoCo reports.
 
 ## Configuration
@@ -187,6 +193,9 @@ Surefire and JaCoCo reports.
 | `OUTBOX_WEBHOOK_URL` | Title registry webhook for the HTTP publisher | `http://localhost:8081/title-events` |
 | `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` | Where traces are sent | `http://localhost:4318/v1/traces` |
 | `TRACING_SAMPLING_PROBABILITY` | Share of requests traced | `1.0` |
+| `REDIS_HOST` / `REDIS_PORT` | Redis for the gateway's rate limits | `localhost` / `6379` |
+| `RATE_LIMIT_REPLENISH_RATE` | Requests per second each partner can sustain | `10` |
+| `RATE_LIMIT_BURST_CAPACITY` | Largest burst a partner can send at once | `20` |
 
 Never use the local defaults in a deployed environment. Kubernetes values are split
 between a ConfigMap and a Secret example under [`k8s/`](k8s/).
@@ -196,4 +205,4 @@ between a ConfigMap and a Secret example under [`k8s/`](k8s/).
 Java 21 with virtual threads, Spring Boot 3, Spring Web Services, Spring Security, Hibernate/JPA,
 PostgreSQL, Flyway, Maven, JUnit 5, MockMvc, Spring-WS Test, ArchUnit, Docker,
 Kubernetes, GitHub Actions, OpenAPI, Actuator, Prometheus, Resilience4j, Spring Cloud
-Gateway, OpenTelemetry (Micrometer Tracing, OTLP), and Jaeger.
+Gateway, Redis, OpenTelemetry (Micrometer Tracing, OTLP), and Jaeger.

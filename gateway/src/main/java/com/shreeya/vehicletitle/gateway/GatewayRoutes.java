@@ -1,6 +1,8 @@
 package com.shreeya.vehicletitle.gateway;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.gateway.filter.ratelimit.KeyResolver;
+import org.springframework.cloud.gateway.filter.ratelimit.RedisRateLimiter;
 import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
@@ -11,9 +13,10 @@ import org.springframework.http.HttpStatus;
 /**
  * Routes partner traffic to the Vehicle Title API.
  *
- * Every route sits behind a circuit breaker with a fallback. Reads are retried on transient
- * failures; writes are not, because a submission is only safe to replay with its idempotency key,
- * which the client controls.
+ * Every route is rate limited per partner first, so rejected requests never reach the API, and
+ * then sits behind a circuit breaker with a fallback. Reads are retried on transient failures;
+ * writes are not, because a submission is only safe to replay with its idempotency key, which the
+ * client controls.
  */
 @Configuration
 public class GatewayRoutes {
@@ -22,11 +25,16 @@ public class GatewayRoutes {
 
     @Bean
     RouteLocator vehicleTitleRoutes(RouteLocatorBuilder routes,
-                                    @Value("${gateway.vehicle-api-uri}") String vehicleApiUri) {
+                                    @Value("${gateway.vehicle-api-uri}") String vehicleApiUri,
+                                    RedisRateLimiter partnerRateLimiter,
+                                    KeyResolver partnerKeyResolver) {
         return routes.routes()
                 .route("vehicle-title-rest", route -> route
                         .path("/api/**")
                         .filters(filter -> filter
+                                .requestRateLimiter(limit -> limit
+                                        .setRateLimiter(partnerRateLimiter)
+                                        .setKeyResolver(partnerKeyResolver))
                                 .addRequestHeader(GATEWAY_HEADER, "vehicle-title-gateway")
                                 .circuitBreaker(breaker -> breaker
                                         .setName("vehicleApi")
@@ -39,6 +47,9 @@ public class GatewayRoutes {
                 .route("vehicle-title-soap", route -> route
                         .path("/ws", "/ws/**")
                         .filters(filter -> filter
+                                .requestRateLimiter(limit -> limit
+                                        .setRateLimiter(partnerRateLimiter)
+                                        .setKeyResolver(partnerKeyResolver))
                                 .addRequestHeader(GATEWAY_HEADER, "vehicle-title-gateway")
                                 .circuitBreaker(breaker -> breaker
                                         .setName("vehicleApi")
